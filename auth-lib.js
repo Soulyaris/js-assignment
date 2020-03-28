@@ -25,13 +25,13 @@ let userList = [
   }*/
 ]
 
-let activeUser;
+let activeUser = undefined;
 
 //-------------------------------
 // Вспомогательные функции
 
 function isBadArgument(argument, type) {
-  return (typeof argument != type || !(!!argument));
+  return (typeof argument != type/* || !(!!argument)*/);
 }
 
 function seekGroupKey(group) {
@@ -59,7 +59,7 @@ function createUser(name, password) {
   let newUser = {};
   newUser.username = name;
   newUser.password = password;
-  newUser.groups = [groupList.basic];
+  newUser.groups = [];
   userList.push(newUser);
   
   return userList[userList.length - 1];
@@ -172,7 +172,7 @@ function groups() {
   
   let groupsArr = [];
   for (key in groupList) {
-    groupsArr[key] = groupList[key];
+    groupsArr.push(groupList[key]);
   }
   return groupsArr;
 
@@ -269,10 +269,58 @@ function removeRightFromGroup(right, group, cleanUp = false) {
 
 }
 
-function login(username, password) {}
+function login(username, password) {
 
-function currentUser() {}
+  if (!!activeUser) {
+    return false;
+  }
 
-function logout() {}
+  if (isBadArgument(username, "string") || isBadArgument(password, "string")) {
+    throw new Error("Неверные данные");
+  }  
 
-function isAuthorized(user, right) {}
+  for (user in userList) {
+    if (userList[user].username === username && userList[user].password === password) {
+      activeUser = userList[user];
+      return true;
+    }
+  }
+
+  return false;
+
+}
+
+function currentUser() {
+  return activeUser;
+}
+
+function logout() {
+  activeUser = undefined;
+}
+
+function isAuthorized(user, right) {
+
+  if (isBadArgument(user, "object") || isBadArgument(right, "string")) {
+    throw new Error("Неверные данные");
+  }  
+
+  let userIndex = userList.indexOf(user);
+  let rightIndex = rightsList.indexOf(right);
+
+  if (userIndex != -1 && rightIndex != -1) {
+    
+    for (group in user.groups) {
+      for (userRight in user.groups[group]) {
+        if (user.groups[group][userRight] === right) {
+          return true;
+        }
+      }
+    }
+  
+    return false;
+
+  } else {
+    throw new Error('Пользователя или права не существует');
+  }
+
+}
