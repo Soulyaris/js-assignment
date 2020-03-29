@@ -1,3 +1,4 @@
+
 //Пример организации структуры данных
 
 let rightsList = [
@@ -31,15 +32,21 @@ let activeUser = undefined;
 // Вспомогательные функции
 
 function isBadArgument(argument, type) {
-  return (typeof argument != type/* || !(!!argument)*/);
+  
+  return (typeof argument != type || !(!!argument));
+
 }
 
 function seekGroupKey(group) {
+  
   for (key in groupList) {
     if (groupList[key] === group) {
       return key;
     }
   }
+
+  return -1; 
+
 }
 
 //-------------------------------
@@ -51,7 +58,7 @@ function users() {
 
 //Создает нового пользователя с указанным логином username и паролем password, возвращает созданного пользователя.
 function createUser(name, password) {
-  
+
   if (isBadArgument(name, "string") || isBadArgument(password, "string")) {
     throw new Error('Неверные данные');
   }
@@ -63,80 +70,93 @@ function createUser(name, password) {
   userList.push(newUser);
   
   return userList[userList.length - 1];
+
 }
 
 // Удаляет пользователя user
 function deleteUser(user) {
-
+  
   if (isBadArgument(user, "object")) {
     throw new Error('Неверные данные');
   }
 
   let userIndex = userList.indexOf(user);
   
-  if (userIndex === -1) {
-    throw new Error('Пользователь не найден');
-  } else {
+  if (userIndex !== -1) {
     userList.splice(userIndex, 1);
+  } else {
+    throw new Error('Пользователь не найден');
   };
+
 }
 
 // Возвращает массив групп, к которым принадлежит пользователь user
 function userGroups(user) {
+
   let userIndex = userList.indexOf(user);
   
-  if (userIndex === -1) {
-    throw new Error('Пользователь не найден');
-  } else {
+  if (userIndex !== -1) {
     return user.groups;
+  } else {
+    throw new Error('Пользователь не найден');
   };
+
 }
 
 // Добавляет пользователя user в группу group
 function addUserToGroup(user, group) {
-  
+
   if (isBadArgument(user, "object") || isBadArgument(group, "object")) {
     throw new Error('Неверные данные');
   };
 
   let userIndex = userList.indexOf(user);
+  let groupIndex = seekGroupKey(group);
 
-  if (userIndex != -1 && groupList[seekGroupKey(group)] != undefined) {
-    user.groups.push(groupList[seekGroupKey(group)]);
+  if (userIndex !== -1) {
+    if (groupIndex !== -1) {
+      user.groups.push(groupList[groupIndex]);
+    } else {
+      throw new Error('Группа не найдена');
+    }
   } else {
-    throw new Error('Пользователя или группы не существует');
+    throw new Error('Пользователь не найден');
   }
+
 }
 
 // Удаляет пользователя user из группы group. Должна бросить исключение, если пользователя user нет в группе group
-function removeUserFromGroup(user, group, cleanUp = false) {
-  
+function removeUserFromGroup(user, group) {
+
   if (isBadArgument(user, "object") || isBadArgument(group, "object")) {
     throw new Error('Неверные данные');
   };
 
+  let cleanUp = arguments[2];
   let userIndex = userList.indexOf(user);
+  let groupIndex = userList[userIndex].groups.indexOf(group);
 
-  if (userIndex != -1 && groupList[seekGroupKey(group)] != undefined) {
-    let groupIndex = user.groups.indexOf(groupList[seekGroupKey(group)]);
-    if (groupIndex != -1) {
+  if (userIndex !== -1) {
+    if (groupIndex !== -1) {
       user.groups.splice(groupIndex, 1);
-    } else if (!cleanUp) {
+    } else if (cleanUp !== true) {
       throw new Error("Пользователь не состоит в группе");
     }
   } else {
-    throw new Error('Пользователя или группы не существует');
+    throw new Error("Пользователь не найден");
   }
 }
 
 // Возвращает массив прав
 function rights() {
+
   return rightsList;
+
 }
 
 // Создает новое право с именем name и возвращает его
 function createRight(name) {
-  
+
   if (isBadArgument(name, "string")) {
     throw new Error("Неверные данные");
   }
@@ -169,11 +189,13 @@ function deleteRight(right) {
 
 // Возвращает массив групп
 function groups() {
-  
+
   let groupsArr = [];
+
   for (key in groupList) {
     groupsArr.push(groupList[key]);
   }
+  
   return groupsArr;
 
 }
@@ -185,13 +207,13 @@ function createGroup(name) {
     throw new Error("Неверные данные");
   }
 
-  if (groupList[name] === undefined) {
+  if (name != "" && groupList[name] === undefined) {
     groupList[name] = [];
 
     return groupList[name];
 
   } else {
-    throw new Error("Группа уже существует");
+    throw new Error("Группа уже существует или имя группы задано неверно");
   }
 
 }
@@ -203,7 +225,7 @@ function deleteGroup(group) {
     throw new Error("Неверные данные");
   }
 
-  if (groupList[seekGroupKey(group)] != undefined) {
+  if (seekGroupKey(group) != -1) {
     for (user in userList) {
       removeUserFromGroup(userList[user], group, true);
     };
@@ -215,13 +237,15 @@ function deleteGroup(group) {
 }
 
 // Возвращает массив прав, которые принадлежат группе group
-function groupRights(group) {
+function groupRights() {
+
+  let group = arguments[0];
 
   if (isBadArgument(group, "object")) {
     throw new Error("Неверные данные");
   }
 
-  if (groupList[seekGroupKey(group)] != undefined) {
+  if (seekGroupKey(group) !== -1) {
     return group;
   } else {
     throw new Error("Группа не найдена");
@@ -230,41 +254,52 @@ function groupRights(group) {
 }
 
 // Добавляет право right к группе group
-function addRightToGroup(right, group) {
+function addRightToGroup() {
+  
+  let right = arguments[0];
+  let group = arguments[1];
 
   if (isBadArgument(group, "object") || isBadArgument(right, "string")) {
     throw new Error("Неверные данные");
   }
   
-  let rightIndex = rightsList.indexOf(right)
+  let rightIndex = rightsList.indexOf(right);
+  let groupIndex = seekGroupKey(group);
 
-  if (seekGroupKey(group) != undefined && rightIndex != -1) {
-    group.push(rightsList[rightIndex]);
+  if (groupIndex != -1) {
+    if (rightIndex != -1) {
+      group.push(rightsList[rightIndex]);
+    } else {
+      throw new Error("Право не найдено");
+    }
   } else {
-    throw new Error("Группа или право не найдены");
+    throw new Error("Группа не найдена");
   }
 
 }
 
 // Удаляет право right из группы group. Должна бросить исключение, если права right нет в группе group
-function removeRightFromGroup(right, group, cleanUp = false) {
+function removeRightFromGroup() {
 
+  let right = arguments[0];
+  let group = arguments[1];
+  
   if (isBadArgument(group, "object") || isBadArgument(right, "string")) {
     throw new Error("Неверные данные");
   }
 
-  let key = seekGroupKey(group);
-  let rightIndex = rightsList.indexOf(right);
+  let cleanUp = arguments[2];
+  let groupIndex = seekGroupKey(group);
+  let rightIndex = groupList[groupIndex].indexOf(right);
 
-  if (key != undefined && rightIndex != -1) {
-    let groupRightIndex = groupList[key].indexOf(right);
-    if (groupRightIndex != -1) {
-      groupList[key].splice(groupRightIndex, 1);
-    } else if (!cleanUp) {
-      throw new Error("Группа не содержит данное право");
+  if (groupIndex != -1) {
+    if (rightIndex != -1) {
+      groupList[groupIndex].splice(rightIndex, 1);
+    } else if (cleanUp !== true){
+      throw new Error("Право не найдено в группе");
     }
   } else {
-    throw new Error("Группа или право не найдены");
+    throw new Error("Группа не найдена");
   }
 
 }
